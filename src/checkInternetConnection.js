@@ -11,33 +11,17 @@ import checkInternetAccess from './checkInternetAccess';
  * @param url
  * @returns {Promise<boolean>}
  */
-export default function checkInternetConnection(
+
+export default async function checkInternetConnection(
   timeout: number = 3000,
   url: string = 'https://www.google.com/',
+  shouldPing: boolean = true,
 ): Promise<boolean> {
-  let connectionChecked: Promise<boolean>;
-  if (Platform.OS === 'ios') {
-    connectionChecked = new Promise((resolve: Function) => {
-      const handleFirstConnectivityChangeIOS = (isConnected: boolean) => {
-        NetInfo.isConnected.removeEventListener(
-          'connectionChange',
-          handleFirstConnectivityChangeIOS,
-        );
-        resolve(isConnected);
-      };
-      NetInfo.isConnected.addEventListener(
-        'connectionChange',
-        handleFirstConnectivityChangeIOS,
-      );
-    });
-  } else {
-    connectionChecked = NetInfo.isConnected.fetch();
-  }
-
-  return connectionChecked.then((isConnected: boolean) => {
-    if (isConnected) {
-      return checkInternetAccess(timeout, url);
+  return NetInfo.isConnected.fetch().then(async (isConnected: boolean) => {
+    if (shouldPing) {
+      const hasInternetAccess = await checkInternetAccess(timeout, url);
+      return hasInternetAccess;
     }
-    return Promise.resolve(false);
+    return isConnected;
   });
 }
